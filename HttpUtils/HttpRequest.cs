@@ -8,7 +8,7 @@ using System.Threading.Tasks;
 
 namespace HttpUtils
 {
-    internal class HttpRequest : IHttpRequest, IDisposable
+    public class HttpRequest : IHttpRequest, IDisposable
     {
         private string _baseUrl = "";
         private readonly HttpClient _httpClient;
@@ -75,6 +75,7 @@ namespace HttpUtils
             if (urlParam != null && urlParam.Count > 0)
             {
                 var queryString = string.Join("&", urlParam.Select(x => $"{Uri.EscapeDataString(x.Key)}={Uri.EscapeDataString(x.Value)}"));
+                queryString = queryString.TrimStart('&');
                 url = $"{url}?{queryString}";
             }
 

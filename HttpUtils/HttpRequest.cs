@@ -2,6 +2,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Net;
 using System.Net.Http;
 using System.Text;
 using System.Threading.Tasks;
@@ -36,7 +37,13 @@ namespace HttpUtils
 
         public HttpRequest()
         {
-            _httpClient = new HttpClient();
+            var proxy = new WebProxy("http://localhost:8888", false);
+            var handler = new HttpClientHandler
+            {
+                Proxy = proxy,
+                UseProxy = true
+            };
+            _httpClient = new HttpClient(handler);
         }
 
         public async Task<string> DeleteAsync(string url)
@@ -198,9 +205,20 @@ namespace HttpUtils
                 url = $"{url}?{queryString}";
             }
 
-            var json = JsonConvert.SerializeObject(input);
-            var content = new StringContent(json);
-            var response = await _httpClient.PutAsync(url, content);
+            // var json = JsonConvert.SerializeObject(input);
+            MultipartFormDataContent multipartFormDataContent = new MultipartFormDataContent();
+
+            var props = input.GetType().GetProperties();
+            foreach (var prop in props)
+            {
+                var value = prop.GetValue(input);
+                if (value != null)
+                {
+                    var stringContent = new StringContent(value.ToString());
+                    multipartFormDataContent.Add(stringContent, prop.Name);
+                }
+            }
+            var response = await _httpClient.PutAsync(url, multipartFormDataContent);
 
             if (response.IsSuccessStatusCode)
             {
@@ -235,6 +253,20 @@ namespace HttpUtils
             {
                 _httpClient.DefaultRequestHeaders.Add("Authorization", _token);
             }
+        }
+
+        public async Task<TResult> PutAsync<TResult>(string url, MultipartFormDataContent input, Dictionary<string, string> urlParam = null)
+        {
+            var response = await _httpClient.PutAsync(url, input);
+
+            if (response.IsSuccessStatusCode)
+            {
+                string result = await response.Content.ReadAsStringAsync();
+                TResult data = JsonConvert.DeserializeObject<TResult>(result);
+                return data;
+            }
+
+            return default;
         }
     }
 }

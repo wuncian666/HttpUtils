@@ -28,6 +28,8 @@ namespace HttpUtils
 
         Task<TResult> PutAsync<TResult>(string url, object input, Dictionary<string, string> urlParam = null);
 
+        Task<TResult> PutAsync<TResult>(string url, MultipartFormDataContent input, Dictionary<string, string> urlParam = null);
+
         Task<string> PutAsync(string url, HttpContent content);
 
         Task<string> DeleteAsync(string url);
